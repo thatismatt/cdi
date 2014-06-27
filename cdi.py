@@ -6,7 +6,7 @@ from datetime import datetime
 
 INCLUDE_HIDDEN = False
 
-log_file = "cdi.log"
+log_file = "/tmp/cdi.log"
 
 def log(*msg):
     with open(log_file, "a") as l:
