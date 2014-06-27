@@ -44,7 +44,7 @@ def _start(stdscr, set_current_dir):
                 return
             elif c == 263: # backspace
                 if len(chs) == 0:
-                    # TODO: jump up a dir
+                    current_dir = os.path.dirname(current_dir)
                     pass
                 else:
                     chs.pop()
