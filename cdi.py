@@ -70,9 +70,9 @@ def list_dirs(current_dir, in_dirs, chs):
 def display_dirs(stdscr, current_dir, dirs, chs):
     log("display_dirs")
     stdscr.clear()
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
     current_dir_absolute = os.path.abspath(current_dir)
-    stdscr.addstr(current_dir_absolute + "\n", curses.color_pair(1) | curses.A_REVERSE)
+    stdscr.addstr(current_dir_absolute + "\n", curses.color_pair(1))
     for name in dirs:
         stdscr.addstr(name + "\n")
 
