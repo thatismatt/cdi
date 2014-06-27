@@ -2,6 +2,7 @@
 
 import curses
 import os
+import sys
 from datetime import datetime
 
 INCLUDE_HIDDEN = False
@@ -12,10 +13,10 @@ def log(*msg):
     with open(log_file, "a") as l:
         l.write("[{}] {}\n".format(datetime.now().isoformat(), " ".join(map(unicode, msg))))
 
-def main():
+def main(result_file):
     x = []
     curses.wrapper(_start, x.append)
-    print(x[0])
+    write_result(result_file, x[0])
 
 def _start(stdscr, set_current_dir):
 
@@ -74,5 +75,9 @@ def display_dirs(stdscr, current_dir, dirs, chs):
     for name in dirs:
         stdscr.addstr(name + "\n")
 
+def write_result(filename, result):
+    with open(filename, "w") as f:
+        f.write(result)
+
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])
