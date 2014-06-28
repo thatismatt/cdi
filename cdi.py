@@ -22,7 +22,7 @@ def main(result_file):
 
 def _start(stdscr, set_current_dir):
 
-    current_dir = "."
+    current_dir = os.path.abspath(".")
     chs = []
 
     while True:
@@ -73,8 +73,7 @@ def display_dirs(stdscr, current_dir, dirs, chs):
     log("display_dirs")
     stdscr.clear()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    current_dir_absolute = os.path.abspath(current_dir)
-    stdscr.addstr(current_dir_absolute + "\n", curses.color_pair(1))
+    stdscr.addstr(current_dir + "\n", curses.color_pair(1))
     for name in dirs:
         stdscr.addstr(name + "\n")
 
