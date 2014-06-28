@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Suggested usage: alias cdi='~/bin/cdi/cdi.py /tmp/cdi.out && cd `cat /tmp/cdi.out`'
+
 import curses
 import os
 import sys
