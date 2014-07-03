@@ -26,7 +26,7 @@ def _start(stdscr, set_current_dir):
     chs = []
 
     while True:
-        dirs = list_dirs(current_dir, os.listdir(current_dir), chs)
+        dirs, files = list_dir(current_dir, os.listdir(current_dir), chs)
 
         if len(dirs) == 1 and len(chs) > 0:
             current_dir = os.path.join(current_dir, dirs[0])
@@ -36,7 +36,7 @@ def _start(stdscr, set_current_dir):
             set_current_dir(current_dir)
             return
         else:
-            display_dirs(stdscr, current_dir, dirs, chs)
+            display_dir(stdscr, current_dir, dirs, files, chs)
 
             log("current_dir", current_dir)
 
@@ -53,28 +53,39 @@ def _start(stdscr, set_current_dir):
             else:
                 chs.append(chr(c))
 
-def list_dirs(current_dir, in_dirs, chs):
-    log("list_dirs")
+def list_dir(current_dir, in_dirs, chs):
+    log("list_dir")
     log(in_dirs)
     prefix = "".join(chs)
-    def _is_included(d):
+    def _is_included(x):
         return (
-            os.path.isdir(os.path.join(current_dir, d)) and
-            (INCLUDE_HIDDEN or d[0] != ".") and
-            d.startswith(prefix)
+            os.path.isdir(os.path.join(current_dir, x)) and
+            (INCLUDE_HIDDEN or x[0] != ".") and
+            x.startswith(prefix)
+        )
+
+    def _is_file(x):
+        return (
+            os.path.isfile(os.path.join(current_dir, x)) and
+            (INCLUDE_HIDDEN or x[0] != ".") and
+            x.startswith(prefix)
         )
 
     dirs = sorted(filter(_is_included, in_dirs))
+    files = sorted(filter(_is_file, in_dirs))
     log(chs)
     log(dirs)
-    return dirs
+    return dirs, files
 
-def display_dirs(stdscr, current_dir, dirs, chs):
+def display_dir(stdscr, current_dir, dirs, files, chs):
     log("display_dirs")
     stdscr.clear()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
     stdscr.addstr(current_dir + "\n", curses.color_pair(1))
     for name in dirs:
+        stdscr.addstr(name + "\n")
+    stdscr.addstr("\nFiles\n", curses.color_pair(1))
+    for name in files:
         stdscr.addstr(name + "\n")
 
 def write_result(filename, result):
