@@ -6,6 +6,7 @@ import curses
 import os
 import sys
 from datetime import datetime
+import collections
 
 INCLUDE_HIDDEN = False
 
@@ -26,66 +27,119 @@ def _start(stdscr, set_current_dir):
     chs = []
 
     while True:
-        dirs, files = list_dir(current_dir, os.listdir(current_dir), chs)
 
-        if len(dirs) == 1 and len(chs) > 0:
-            current_dir = os.path.join(current_dir, dirs[0])
+        raw_listing = list_dir(current_dir)
+        listing = filter_dir(raw_listing, chs)
+
+        if len(listing.dirs) == 1 and len(chs) > 0:
+            current_dir = os.path.join(current_dir, listing.dirs[0])
             chs = []
-        elif len(dirs) == 0 and len(chs) == 0:
-            log("current_dir", current_dir)
-            set_current_dir(current_dir)
-            return
         else:
-            display_dir(stdscr, current_dir, dirs, files, chs)
-
+            display_dir(stdscr, current_dir, listing)
             log("current_dir", current_dir)
-
             c = stdscr.getch()
             if c == ord("\n"):
-                set_current_dir(current_dir)
-                return
+                if len(chs) == 0:
+                    set_current_dir(current_dir)
+                    return
+                else:
+                    current_dir = os.path.join(current_dir, listing.best_match)
+                    chs = []
             elif c == 263: # backspace
                 if len(chs) == 0:
                     current_dir = os.path.dirname(current_dir)
-                    pass
                 else:
                     chs.pop()
             else:
                 chs.append(chr(c))
 
-def list_dir(current_dir, in_dirs, chs):
+DirectoryListing = collections.namedtuple("DirectoryListing", [
+    "dirs",
+    "files",
+    "best_match",
+])
+
+FileStat = collections.namedtuple("FileStat", [
+    "name",
+    "is_file",
+    "is_dir",
+])
+
+def list_dir(current_dir):
+    def stat(name):
+        full_path = os.path.join(current_dir, name)
+        return FileStat(
+            name,
+            is_file=os.path.isfile(full_path),
+            is_dir=os.path.isdir(full_path)
+        )
+
+    return map(stat, os.listdir(current_dir))
+
+def filter_dir(in_dirs, chs):
     log("list_dir")
     log(in_dirs)
     prefix = "".join(chs)
+
     def _is_included(x):
         return (
-            os.path.isdir(os.path.join(current_dir, x)) and
-            (INCLUDE_HIDDEN or x[0] != ".") and
-            x.startswith(prefix)
+            x.is_dir and
+            (INCLUDE_HIDDEN or x.name[0] != ".") and
+            dirs_scores[x.name] > 0
         )
 
     def _is_file(x):
         return (
-            os.path.isfile(os.path.join(current_dir, x)) and
-            (INCLUDE_HIDDEN or x[0] != ".") and
-            x.startswith(prefix)
+            x.is_file and
+            (INCLUDE_HIDDEN or x.name[0] != ".")
         )
 
+    dirs_scores = collections.OrderedDict(
+        (in_dir.name, score_match(chs, in_dir.name))
+        for in_dir in in_dirs
+        if in_dir.is_dir
+    )
     dirs = sorted(filter(_is_included, in_dirs))
     files = sorted(filter(_is_file, in_dirs))
     log(chs)
     log(dirs)
-    return dirs, files
 
-def display_dir(stdscr, current_dir, dirs, files, chs):
+    def extract_names(stats):
+        return [stat.name for stat in stats]
+
+    if chs == []:
+        best_match = None
+    else:
+        best_match = max(dirs_scores.keys(), key=dirs_scores.get)
+
+    return DirectoryListing(extract_names(dirs), extract_names(files), best_match)
+
+def score_match(chs, name):
+    score = 1
+    index = -1
+    for ch in chs:
+        index = name.find(ch, index + 1)
+        if index == -1:
+            return 0
+        else:
+            score += 1000000 - index
+            if index == 0 or name[index - 1] in "-_ .":
+                score += 2000000
+    return score
+
+def display_dir(stdscr, current_dir, listing):
     log("display_dirs")
     stdscr.clear()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
     stdscr.addstr(current_dir + "\n", curses.color_pair(1))
-    for name in dirs:
-        stdscr.addstr(name + "\n")
+    for name in listing.dirs:
+        if name == listing.best_match:
+            stdscr.addstr(name + "\n", curses.color_pair(2))
+        else:
+            stdscr.addstr(name + "\n")
     stdscr.addstr("\nFiles\n", curses.color_pair(1))
-    for name in files:
+    for name in listing.files:
         stdscr.addstr(name + "\n")
 
 def write_result(filename, result):
