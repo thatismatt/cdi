@@ -96,7 +96,7 @@ def filter_dir(in_dirs, chs):
 
     dirs_scores = collections.OrderedDict(
         (in_dir.name, score_match(chs, in_dir.name))
-        for in_dir in in_dirs
+        for in_dir in sorted(in_dirs)
         if in_dir.is_dir
     )
     dirs = sorted(filter(_is_included, in_dirs))
