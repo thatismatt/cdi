@@ -12,6 +12,8 @@ INCLUDE_HIDDEN = False
 
 log_file = "/tmp/cdi.log"
 
+HEADER_LINES = 4
+
 def log(*msg):
     with open(log_file, "a") as l:
         l.write("[{}] {}\n".format(datetime.now().isoformat(), " ".join(map(unicode, msg))))
@@ -25,6 +27,9 @@ def _start(stdscr, set_current_dir):
 
     current_dir = os.path.abspath(".")
     chs = []
+
+    if screen_height_ok(stdscr):
+        exit(-1)
 
     while True:
 
@@ -64,6 +69,10 @@ FileStat = collections.namedtuple("FileStat", [
     "is_file",
     "is_dir",
 ])
+
+def screen_height_ok(stdscr):
+    (height, width) = stdscr.getmaxyx()
+    return height < HEADER_LINES
 
 def list_dir(current_dir):
     def stat(name):
@@ -130,16 +139,19 @@ def score_match(chs, name):
 def display_dir(stdscr, current_dir, listing):
     log("display_dirs")
     stdscr.clear()
+    (height, width) = stdscr.getmaxyx()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
     curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
     stdscr.addstr(current_dir + "\n", curses.color_pair(1))
-    for name in listing.dirs:
+    dirs = listing.dirs[:height - HEADER_LINES]
+    files = listing.files[:height - len(dirs) - HEADER_LINES]
+    for name in dirs:
         if name == listing.best_match:
             stdscr.addstr(name + "\n", curses.color_pair(2))
         else:
             stdscr.addstr(name + "\n")
     stdscr.addstr("\nFiles\n", curses.color_pair(1))
-    for name in listing.files:
+    for name in files:
         stdscr.addstr(name + "\n")
 
 def write_result(filename, result):
